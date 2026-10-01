@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Variables de entorno globales
+env:
+  ENVIRONMENT: "production"
+  PROJECT_NAME: "mi-app"
+
+jobs:
+  # Matriz de versiones de Python llamando a reusable-test.yml
+  test-matrix:
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+    secrets:
+      APP_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}
+
+  # Llamada al workflow reutilizable para la fase de build
+  call-build:
+    needs: test-matrix
+    uses: ./.github/workflows/build.yml
