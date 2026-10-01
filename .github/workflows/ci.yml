@@ -12,18 +12,37 @@ env:
   PROJECT_NAME: "mi-app"
 
 jobs:
-  # Matriz de versiones de Python llamando a reusable-test.yml
-  test-matrix:
+  # Matriz de versiones de Python y uso de secrets
+  test:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
-    uses: ./.github/workflows/reusable-test.yml
-    with:
-      python-version: ${{ matrix.python-version }}
-    secrets:
-      APP_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}
 
-  # Llamada al workflow reutilizable para la fase de build
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Ocultar token en logs usando secrets
+      - name: Uso de Secret
+        env:
+          MY_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}
+        run: |
+          echo "Ejecutando tests con Python ${{ matrix.python-version }}"
+          echo "Token enmascarado: $MY_TOKEN"
+
+      - name: Ejecutar Tests
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python -m unittest discover
+
+  # Llamada al workflow reutilizable de build
   call-build:
-    needs: test-matrix
+    needs: test
     uses: ./.github/workflows/build.yml
