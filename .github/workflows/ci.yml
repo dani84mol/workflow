@@ -12,7 +12,6 @@ env:
   PROJECT_NAME: "mi-app"
 
 jobs:
-  # Matriz de versiones de Python y uso de secrets
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -23,13 +22,22 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      # Validación explícita de secret obligatorio
+      - name: Verificar Secret requerido
+        env:
+          SECRET_CHECK: ${{ secrets.MY_SECRET_TOKEN }}
+        run: |
+          if [ -z "$SECRET_CHECK" ]; then
+            echo "::error::El secret MY_SECRET_TOKEN es obligatorio y no fue encontrado en Settings > Secrets."
+            exit 1
+          fi
+
       - name: Configurar Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Ocultar token en logs usando secrets
-      - name: Uso de Secret
+      - name: Uso del Token enmascarado
         env:
           MY_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}
         run: |
@@ -42,7 +50,8 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           python -m unittest discover
 
-  # Llamada al workflow reutilizable de build
   call-build:
     needs: test
     uses: ./.github/workflows/build.yml
+    secrets:
+      APP_TOKEN: ${{ secrets.MY_SECRET_TOKEN }}

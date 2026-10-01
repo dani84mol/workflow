@@ -2,6 +2,10 @@ name: Build
 
 on:
   workflow_call:
+    secrets:
+      APP_TOKEN:
+        description: "Token obligatorio para la fase de build"
+        required: true
 
 jobs:
   build-app:
@@ -9,6 +13,15 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+
+      - name: Validar que el secret no esté vacío
+        env:
+          APP_TOKEN: ${{ secrets.APP_TOKEN }}
+        run: |
+          if [ -z "$APP_TOKEN" ]; then
+            echo "::error::El secret APP_TOKEN no está definido o está vacío."
+            exit 1
+          fi
 
       - name: Ejecutar build
         run: |
